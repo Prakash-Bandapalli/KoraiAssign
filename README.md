@@ -14,7 +14,8 @@ This project is a full-stack web application built as a take-home assignment for
 
 ## 📸 Application Preview
 
-![Demo Video](https://github.com/user-attachments/assets/92d0e5c5-83a3-467e-a24e-91322d8cbe24)
+### 🎥 Video Demo
+https://github.com/user-attachments/assets/92d0e5c5-83a3-467e-a24e-91322d8cbe24
 
 *Watch the demo video showing the complete workflow from upload to results*
 

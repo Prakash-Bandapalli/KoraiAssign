@@ -1,7 +1,8 @@
-const ocrService = require("../services/ocr.service");
+const { extractTextWithOCR } = require("../services/ocr.service");
 const parsingService = require("../services/parsing.service");
 const agentService = require("../services/agent.service");
 const fs = require("fs");
+const pdf = require("pdf-parse");
 
 const analyzeReport = async (req, res) => {
   if (!req.file) {
@@ -9,22 +10,38 @@ const analyzeReport = async (req, res) => {
   }
 
   const filePath = req.file.path;
+  let extractedText = "";
 
   try {
-    const extractedText = await ocrService.extractTextFromFile(filePath);
+    // --- SMART PIPELINE LOGIC ---
+    if (req.file.mimetype === "application/pdf") {
+      console.log("PDF file detected. Attempting fast text extraction...");
+      const dataBuffer = fs.readFileSync(filePath);
+      const pdfData = await pdf(dataBuffer);
 
-    // comment out these for logging results in console
+      // If we get meaningful text, use it. This is the "fast path".
+      if (pdfData && pdfData.text.trim().length > 0) {
+        console.log("Fast text extraction successful!");
+        extractedText = pdfData.text;
+      } else {
+        console.log(
+          "Fast text extraction failed (likely a scanned PDF). Falling back to OCR..."
+        );
+        extractedText = await extractTextWithOCR(filePath);
+      }
+    } else {
+      console.log("Image file detected. Proceeding with OCR...");
+      extractedText = await extractTextWithOCR(filePath);
+    }
 
-    // // --- LOGGING POINT 1: Raw OCR Output ---
     // console.log("\n========================================");
-    // console.log("✅ (1/2) RAW TEXT FROM OCR SERVICE:");
+    // console.log("✅ (1/2) RAW TEXT FOR PARSING:");
     // console.log("========================================");
     // console.log(extractedText);
     // console.log("----------------------------------------\n");
 
     const structuredData = parsingService.parseText(extractedText);
 
-    // // --- LOGGING POINT 2: Parsed, Structured Data ---
     // console.log("\n========================================");
     // console.log("✅ (2/2) STRUCTURED DATA FROM PARSING SERVICE:");
     // console.log("========================================");
@@ -49,7 +66,6 @@ const getInsights = async (req, res) => {
     return res.status(400).json({ error: "Invalid results data provided." });
   }
 
-  //   // --- LOGGING POINT 3: Data Received by Insights Endpoint ---
   //   console.log("\n========================================");
   //   console.log("🧠 (3/4) DATA RECEIVED BY AI AGENT:");
   //   console.log("========================================");
@@ -59,7 +75,6 @@ const getInsights = async (req, res) => {
   try {
     const enhancedData = await agentService.generateInsights(results);
 
-    // // --- LOGGING POINT 4: Final Enhanced Data from AI Agent ---
     // console.log("\n========================================");
     // console.log("✨ (4/4) FINAL ENHANCED DATA FROM AI AGENT:");
     // console.log("========================================");

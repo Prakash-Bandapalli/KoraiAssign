@@ -1,11 +1,11 @@
 const Tesseract = require("tesseract.js");
 
-const extractTextFromFile = async (filePath) => {
+const extractTextWithOCR = async (fileSource) => {
   try {
-    console.log(`Starting OCR process for file: ${filePath}`);
+    console.log(`Starting OCR process...`);
     const {
       data: { text },
-    } = await Tesseract.recognize(filePath, "eng", {
+    } = await Tesseract.recognize(fileSource, "eng", {
       logger: (m) => {
         if (m.status === "recognizing text") {
           console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
@@ -21,5 +21,5 @@ const extractTextFromFile = async (filePath) => {
 };
 
 module.exports = {
-  extractTextFromFile,
+  extractTextWithOCR,
 };
